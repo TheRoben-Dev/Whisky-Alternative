@@ -48,6 +48,7 @@ struct LibraryCard: View {
     /// the prefix is plumbing and naming it on every card is noise.
     let bottleName: String?
     let lastPlayed: Date?
+    let playtime: TimeInterval
     let state: LibraryEntryState
     let launch: () -> Void
 
@@ -237,6 +238,9 @@ struct LibraryCard: View {
             parts.append(lastPlayed.formatted(.relative(presentation: .named)))
         } else {
             parts.append(String(localized: "library.card.neverRun"))
+        }
+        if playtime > 0 {
+            parts.append(String(localized: "library.card.played \(PlayStatsFormat.duration(playtime))"))
         }
         if let bottleName {
             parts.append(bottleName)

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exits and records total playtime, session count, first and last played,
   longest session and the last 14 days of activity, stored beside the run
   history in `Program Settings`.
+- A Play Stats section on each program's page with totals and a 14-day
+  activity chart, playtime on library cards, and a "Most played" library sort.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked

@@ -24,6 +24,7 @@ import WhiskyKit
 /// How the library grid is ordered.
 enum LibrarySort: String, CaseIterable, Identifiable {
     case recent
+    case playtime
     case name
     case bottle
 
@@ -32,19 +33,23 @@ enum LibrarySort: String, CaseIterable, Identifiable {
     var label: LocalizedStringResource {
         switch self {
         case .recent: "library.sort.recent"
+        case .playtime: "library.sort.playtime"
         case .name: "library.sort.name"
         case .bottle: "library.sort.bottle"
         }
     }
 }
 
-/// A library entry plus what the grid needs to draw it. `bottleName` and
-/// `lastPlayed` are presentation, which is why they live here rather than in
-/// ``LibraryEntry``.
+/// A library entry plus what the grid needs to draw it. `bottleName`,
+/// `lastPlayed` and `playtime` are presentation, which is why they live here
+/// rather than in ``LibraryEntry``.
 struct LibraryRow: Identifiable {
     let item: LibraryEntry
     let bottleName: String?
     let lastPlayed: Date?
+    /// Lifetime playtime from ``PlayStats``. Zero for Steam games, whose
+    /// sessions are not tracked yet.
+    let playtime: TimeInterval
 
     var id: String { item.id }
 }
@@ -126,7 +131,8 @@ final class LibraryModel: ObservableObject {
                     LibraryRow(
                         item: item,
                         bottleName: showBottleName ? bottle.settings.name : nil,
-                        lastPlayed: lastPlayed(for: item, routed: routed)
+                        lastPlayed: lastPlayed(for: item, routed: routed),
+                        playtime: playtime(for: item)
                     )
                 )
             }
@@ -150,6 +156,11 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    private func playtime(for item: LibraryEntry) -> TimeInterval {
+        guard case let .program(url) = item.launch else { return 0 }
+        return PlayStatsStore.load(for: url.lastPathComponent, in: item.bottleURL).totalPlaytime
+    }
+
     /// Launchers last whatever the sort is. A storefront client is how you reach
     /// a game, not one of them, and it would otherwise take the top of the grid
     /// on recency because every game launch runs it.
@@ -160,6 +171,7 @@ final class LibraryModel: ObservableObject {
             }
             return switch sort {
             case .recent: byRecency(first, second)
+            case .playtime: byPlaytime(first, second)
             case .name: byName(first, second)
             case .bottle: byBottle(first, second)
             }
@@ -173,6 +185,11 @@ final class LibraryModel: ObservableObject {
         case (nil, _?): false
         case (nil, nil): byName(first, second)
         }
+    }
+
+    private func byPlaytime(_ first: LibraryRow, _ second: LibraryRow) -> Bool {
+        guard first.playtime != second.playtime else { return byRecency(first, second) }
+        return first.playtime > second.playtime
     }
 
     private func byName(_ first: LibraryRow, _ second: LibraryRow) -> Bool {
