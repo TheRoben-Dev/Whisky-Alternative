@@ -27,7 +27,7 @@ final class PlayStatsTests: XCTestCase {
     }
 
     private func date(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
-        calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))
+        calendar.date(from: DateComponents(year: 2_026, month: 10, day: day, hour: hour, minute: minute))
             ?? .distantPast
     }
 
@@ -39,9 +39,9 @@ final class PlayStatsTests: XCTestCase {
         XCTAssertTrue(stats.record(start: date(2, 10), end: date(2, 13), calendar: calendar))
 
         XCTAssertEqual(stats.sessionCount, 2)
-        XCTAssertEqual(stats.totalPlaytime, 4 * 3600)
-        XCTAssertEqual(stats.longestSession, 3 * 3600)
-        XCTAssertEqual(stats.averageSession, 2 * 3600)
+        XCTAssertEqual(stats.totalPlaytime, 4 * 3_600)
+        XCTAssertEqual(stats.longestSession, 3 * 3_600)
+        XCTAssertEqual(stats.averageSession, 2 * 3_600)
         XCTAssertEqual(stats.firstPlayed, date(1, 10))
         XCTAssertEqual(stats.lastPlayed, date(2, 13))
     }
@@ -58,8 +58,8 @@ final class PlayStatsTests: XCTestCase {
 
         let days = stats.recentDays(endingAt: date(2, 12), calendar: calendar)
         XCTAssertEqual(days.count, PlayStats.dailyHistoryDays)
-        XCTAssertEqual(days.last?.seconds, 3600)
-        XCTAssertEqual(days[days.count - 2].seconds, 3600)
+        XCTAssertEqual(days.last?.seconds, 3_600)
+        XCTAssertEqual(days[days.count - 2].seconds, 3_600)
     }
 
     func testDailyHistoryIsPruned() {
@@ -68,7 +68,7 @@ final class PlayStatsTests: XCTestCase {
         stats.record(start: date(25, 10), end: date(25, 11), calendar: calendar)
 
         XCTAssertEqual(stats.daily.count, 1)
-        XCTAssertEqual(stats.totalPlaytime, 2 * 3600)
+        XCTAssertEqual(stats.totalPlaytime, 2 * 3_600)
     }
 
     // MARK: - PlayStatsStore
