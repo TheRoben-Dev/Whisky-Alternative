@@ -1311,7 +1311,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 3.7.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.Whisky;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewed";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1349,7 +1349,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 3.7.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.Whisky;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewed";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1374,7 +1374,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.WhiskyCmd;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewedCmd";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1400,7 +1400,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.WhiskyCmd;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewedCmd";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1424,7 +1424,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WhiskyThumbnail/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WhiskyThumbnail;
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisky ReBrewed Thumbnail";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1433,7 +1433,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 3.7.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.Whisky.WhiskyThumbnail;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewed.WhiskyThumbnail";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1459,7 +1459,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WhiskyThumbnail/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WhiskyThumbnail;
+				INFOPLIST_KEY_CFBundleDisplayName = "Whisky ReBrewed Thumbnail";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1468,7 +1468,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 3.7.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.Whisky.WhiskyThumbnail;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewed.WhiskyThumbnail";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1485,7 +1485,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WhiskyUITests/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.WhiskyUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewedUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -1500,7 +1500,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WhiskyUITests/Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franke.WhiskyUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.theroben-dev.WhiskyReBrewedUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;

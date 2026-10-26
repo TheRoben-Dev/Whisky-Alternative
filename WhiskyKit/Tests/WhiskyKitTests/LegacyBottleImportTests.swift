@@ -163,4 +163,25 @@ final class LegacyBottleImportTests: XCTestCase {
     func testLegacyContainerExists() {
         XCTAssertTrue(LegacyBottleImport.legacyContainerExists(at: container))
     }
+
+    func testImportsFromSeveralAppsListingEachBottleOnce() throws {
+        let other = FileManager.default.temporaryDirectory.appending(path: "legacy_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: other) }
+
+        let frankeaBottles = try bottlesDir()
+        let fromFrankea = try makeBottle("fork", in: frankeaBottles)
+        let originalBottles = other.appending(path: "Bottles")
+        try FileManager.default.createDirectory(at: originalBottles, withIntermediateDirectories: true)
+        let fromOriginal = try makeBottle("original", in: originalBottles)
+        // The fork's registry also knows about the original app's bottle.
+        try writeRegistry([fromOriginal])
+
+        let found = LegacyBottleImport.importableBottles(legacyContainers: [container, other], existingPaths: [])
+        XCTAssertEqual(found.map(\.url), [fromFrankea, fromOriginal])
+    }
+
+    func testFrankeaWhiskyIsAnImportSource() {
+        XCTAssertEqual(LegacyBottleImport.legacyBundleIdentifiers, ["com.franke.Whisky", "com.isaacmarovitz.Whisky"])
+    }
 }

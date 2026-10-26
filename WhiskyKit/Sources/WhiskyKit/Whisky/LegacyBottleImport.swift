@@ -19,8 +19,9 @@
 import Foundation
 import os.log
 
-/// Discovery of bottles created by the archived original Whisky app
-/// (bundle identifier `com.isaacmarovitz.Whisky`) so this fork can import them.
+/// Discovery of bottles created by other Whisky apps, so this one can import
+/// them: the archived original (`com.isaacmarovitz.Whisky`) and frankea's
+/// fork (`com.franke.Whisky`), which Whisky ReBrewed is built on.
 ///
 /// The fork uses a different bundle identifier, so it doesn't see the original app's
 /// bottles automatically. It is not sandboxed, though, so it can read the original
@@ -36,12 +37,28 @@ public enum LegacyBottleImport {
     /// Bundle identifier of the archived original Whisky app.
     public static let legacyBundleIdentifier = "com.isaacmarovitz.Whisky"
 
+    /// Every app whose bottles can be imported, newest first, so a bottle
+    /// both know about is listed under the one most likely still in use.
+    public static let legacyBundleIdentifiers = ["com.franke.Whisky", legacyBundleIdentifier]
+
     /// `~/Library/Containers/com.isaacmarovitz.Whisky`.
     public static var legacyContainerDirectory: URL {
+        containerDirectory(for: legacyBundleIdentifier)
+    }
+
+    /// The containers of every app in ``legacyBundleIdentifiers``, leaving out
+    /// this app's own in case it is running under one of those identifiers.
+    public static var legacyContainerDirectories: [URL] {
+        legacyBundleIdentifiers
+            .filter { $0 != Bundle.whiskyBundleIdentifier }
+            .map(containerDirectory(for:))
+    }
+
+    private static func containerDirectory(for bundleIdentifier: String) -> URL {
         FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library")
             .appending(path: "Containers")
-            .appending(path: legacyBundleIdentifier)
+            .appending(path: bundleIdentifier)
     }
 
     /// Minimal decode of the original app's bottle registry. Same plist shape as
@@ -125,6 +142,22 @@ public enum LegacyBottleImport {
         importableBottleURLs(legacyContainer: legacyContainer, existingPaths: existingPaths).map { url in
             DiscoveredBottle(url: url, name: readOnlyName(at: url) ?? url.lastPathComponent)
         }
+    }
+
+    /// ``importableBottles(legacyContainer:existingPaths:)`` across several
+    /// apps' containers, each bottle listed once.
+    public static func importableBottles(
+        legacyContainers: [URL] = legacyContainerDirectories,
+        existingPaths: [URL]
+    ) -> [DiscoveredBottle] {
+        var known = existingPaths
+        var result: [DiscoveredBottle] = []
+        for container in legacyContainers {
+            let found = importableBottles(legacyContainer: container, existingPaths: known)
+            result.append(contentsOf: found)
+            known.append(contentsOf: found.map(\.url))
+        }
+        return result
     }
 
     /// Reads a bottle's display name from its `Metadata.plist` **without writing anything**.

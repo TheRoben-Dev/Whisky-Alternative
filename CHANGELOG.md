@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Renamed to Whisky ReBrewed, with its own bundle identifier
+  (`io.github.theroben-dev.WhiskyReBrewed`) so it installs beside Whisky
+  instead of replacing it. Its bottles, Wine runtime and settings live in its
+  own container.
+- Updates come from Whisky ReBrewed's own appcast, so an install is never
+  updated into upstream Whisky. Help links and issue reports point at this
+  repository.
+- Usage telemetry is off in this fork: the upstream PostHog project token is
+  removed, so nothing is sent even with consent.
+
 ### Added
+- "Import Bottles from Whisky…" now finds bottles from frankea/Whisky as well
+  as the archived original, and references them in place.
 - Per-game play statistics. Whisky now watches a launched program until it
   exits and records total playtime, session count, first and last played,
   longest session and the last 14 days of activity, stored beside the run

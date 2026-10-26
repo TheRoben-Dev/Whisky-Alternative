@@ -1,25 +1,22 @@
 <div align="center">
 
-  # Whisky 🥃
-  *Wine but a bit stronger*
+  # Whisky ReBrewed 🥃
+  *Wine but a bit stronger, now with a game library*
 
-  > **Active community fork.** The original [whisky-app/whisky](https://github.com/whisky-app/whisky)
-  > was archived on April 9, 2025 with a final maintenance notice. This fork, maintained by
-  > [@frankea](https://github.com/frankea), continues development — addressing the backlog of
-  > upstream issues and adding new functionality. Not affiliated with the original project or
-  > getwhisky.app.
+  > **A game-focused fork of [frankea/Whisky](https://github.com/frankea/Whisky)**, which itself
+  > continues the archived [whisky-app/whisky](https://github.com/whisky-app/whisky). Whisky
+  > ReBrewed adds a console-style library with cover art, per-game playtime and stats, full
+  > Xbox-controller navigation and per-game performance profiles. It uses the same Wine runtime
+  > as frankea/Whisky and can import that app's bottles in place. Not affiliated with either
+  > project or getwhisky.app.
 
-  ![](https://img.shields.io/github/actions/workflow/status/frankea/Whisky/CI.yml?style=for-the-badge&label=CI)
-  [![](https://img.shields.io/codecov/c/github/frankea/Whisky?style=for-the-badge&logo=codecov&label=Coverage&flag=whiskykit)](https://codecov.io/gh/frankea/Whisky)
-  [![](https://img.shields.io/github/downloads/frankea/Whisky/total?style=for-the-badge&logo=github&label=Downloads)](https://github.com/frankea/Whisky/releases)
-  [![](https://img.shields.io/github/downloads/frankea/Whisky/latest/total?style=for-the-badge&label=Latest)](https://github.com/frankea/Whisky/releases/latest)
-  [![](https://img.shields.io/github/issues/frankea/Whisky?style=for-the-badge)](https://github.com/frankea/Whisky/issues)
-  [![Documentation](https://img.shields.io/badge/Documentation-DocC-blue?style=for-the-badge)](https://frankea.github.io/Whisky/documentation/whiskykit/)
+  ![](https://img.shields.io/github/actions/workflow/status/TheRoben-Dev/Whisky-Alternative/CI.yml?style=for-the-badge&label=CI)
+  [![](https://img.shields.io/github/issues/TheRoben-Dev/Whisky-Alternative?style=for-the-badge)](https://github.com/TheRoben-Dev/Whisky-Alternative/issues)
 </div>
 
 ## Overview
 
-Whisky provides a clean and easy-to-use graphical wrapper for Wine built in native SwiftUI. You can make and manage bottles, install and run Windows apps and games, and unlock the full potential of your Mac with no technical knowledge required.
+Whisky ReBrewed provides a clean and easy-to-use graphical wrapper for Wine built in native SwiftUI. You can make and manage bottles, install and run Windows apps and games, and unlock the full potential of your Mac with no technical knowledge required.
 
 <img width="650" alt="Whisky in action" src="./images/demo.gif">
 

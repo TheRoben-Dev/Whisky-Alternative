@@ -57,7 +57,7 @@ final class DistributionConfigTests: XCTestCase {
     // MARK: - Appcast URL Tests
 
     func testAppcastURL() {
-        let expectedURL = "https://frankea.github.io/Whisky/appcast.xml"
+        let expectedURL = "https://theroben-dev.github.io/Whisky-Alternative/appcast.xml"
         XCTAssertEqual(DistributionConfig.appcastURL, expectedURL)
     }
 
@@ -377,7 +377,7 @@ final class DistributionConfigTests: XCTestCase {
         let appcastURL = URL(string: DistributionConfig.appcastURL)
         XCTAssertNotNil(appcastURL, "Appcast URL should be valid")
         XCTAssertEqual(appcastURL?.scheme, "https")
-        XCTAssertEqual(appcastURL?.host, "frankea.github.io")
+        XCTAssertEqual(appcastURL?.host, "theroben-dev.github.io")
     }
 }
 

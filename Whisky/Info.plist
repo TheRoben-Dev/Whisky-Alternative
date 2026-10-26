@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDisplayName</key>
+	<string>Whisky ReBrewed</string>
+	<key>CFBundleName</key>
+	<string>Whisky ReBrewed</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -57,7 +61,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.franke.Whisky</string>
+			<string>io.github.theroben-dev.WhiskyReBrewed</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>whisky</string>
@@ -65,17 +69,17 @@
 		</dict>
 	</array>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Whisky needs access to Desktop to create shortcuts for Windows programs.</string>
+	<string>Whisky ReBrewed needs access to Desktop to create shortcuts for Windows programs.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Whisky needs access to this folder to manage Wine bottles and install Windows dependencies.</string>
+	<string>Whisky ReBrewed needs access to this folder to manage Wine bottles and install Windows dependencies.</string>
 	<key>NSNetworkVolumesUsageDescription</key>
-	<string>Whisky needs access to network volumes when bottles are stored on network drives.</string>
+	<string>Whisky ReBrewed needs access to network volumes when bottles are stored on network drives.</string>
 	<key>NSRemovableVolumesUsageDescription</key>
-	<string>Whisky needs access to removable volumes when bottles are stored on external drives.</string>
+	<string>Whisky ReBrewed needs access to removable volumes when bottles are stored on external drives.</string>
 	<key>PostHogProjectToken</key>
-	<string>phc_LJiR538eQO7W24OkTeGFyi3m53BzJCVKEY7c46Lodrh</string>
+	<string></string>
 	<key>SUFeedURL</key>
-	<string>https://frankea.github.io/Whisky/appcast.xml</string>
+	<string>https://theroben-dev.github.io/Whisky-Alternative/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>rJHUOL+DnZ2+w0irWNhkZmt3SfYMyy1qcEPEmIGuszM=</string>
 	<key>UTExportedTypeDeclarations</key>
