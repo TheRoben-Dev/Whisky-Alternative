@@ -35,13 +35,11 @@ enum LibraryEntryState: Equatable {
     case running
 }
 
-/// One library entry, coloured by its own icon.
+/// One library entry as a wide card, coloured by its own icon.
 ///
-/// Landscape rather than the portrait box art other launchers use, because they
-/// download 600x900 posters and we have a 32 to 256px icon out of the
-/// executable. Stretching an icon into a poster looks broken; a wide card is the
-/// shape an icon and a name actually want, and it leaves the icon at its native
-/// size where it stays crisp.
+/// The Cards layout. A wide card is the shape an icon and a name want when there
+/// is no box art, and it leaves the icon at its native size where it stays
+/// crisp. ``LibraryCoverCard`` is the portrait alternative.
 struct LibraryCard: View {
     let item: LibraryEntry
     /// Only shown when there is more than one bottle, since with a single bottle

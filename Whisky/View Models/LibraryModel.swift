@@ -40,6 +40,30 @@ enum LibrarySort: String, CaseIterable, Identifiable {
     }
 }
 
+/// How the library grid draws its entries.
+enum LibraryLayout: String, CaseIterable, Identifiable {
+    /// Portrait box art, the way console launchers show a library.
+    case covers
+    /// Wide cards coloured by the icon, which suit programs without art.
+    case cards
+
+    var id: String { rawValue }
+
+    var label: LocalizedStringResource {
+        switch self {
+        case .covers: "library.layout.covers"
+        case .cards: "library.layout.cards"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .covers: "rectangle.portrait.on.rectangle.portrait"
+        case .cards: "rectangle.grid.2x2"
+        }
+    }
+}
+
 /// A library entry plus what the grid needs to draw it. `bottleName`,
 /// `lastPlayed` and `playtime` are presentation, which is why they live here
 /// rather than in ``LibraryEntry``.
@@ -126,7 +150,10 @@ final class LibraryModel: ObservableObject {
             let pinned = PinnedLibrarySource.items(inBottleAt: url, settings: bottle.settings)
             let steam = await Task.detached { SteamLibrarySource.entries(inBottleAt: url) }.value
 
-            for item in LibraryCatalogue.merge([pinned, steam]) {
+            let merged = LibraryCatalogue.merge([pinned, steam])
+            let covered = await Task.detached { LibraryCoverStore.applyingCustomCovers(to: merged) }.value
+
+            for item in covered {
                 built.append(
                     LibraryRow(
                         item: item,
@@ -201,6 +228,31 @@ final class LibraryModel: ObservableObject {
         let rhs = second.bottleName ?? ""
         guard lhs == rhs else { return lhs.localizedStandardCompare(rhs) == .orderedAscending }
         return byName(first, second)
+    }
+}
+
+// MARK: - Covers
+
+extension LibraryModel {
+    /// Makes the image at `source` the cover for `row`, then redraws the grid.
+    func setCover(from source: URL, for row: LibraryRow, bottles: [Bottle]) async {
+        do {
+            let stored = try LibraryCoverStore.setCustomCover(from: source, for: row.item)
+            // A replacement in the same format lands at the same path, and the
+            // cache is keyed by path, so without this the old cover stays up.
+            await IconCache.shared.invalidate(url: stored)
+            await reload(bottles: bottles)
+        } catch {
+            toast = ToastData(message: String(localized: "library.cover.failed"), style: .error)
+        }
+    }
+
+    func resetCover(for row: LibraryRow, bottles: [Bottle]) async {
+        if let current = row.item.coverURL {
+            await IconCache.shared.invalidate(url: current)
+        }
+        LibraryCoverStore.removeCustomCover(for: row.item)
+        await reload(bottles: bottles)
     }
 }
 
