@@ -19,7 +19,9 @@
 import Foundation
 
 public enum DistributionConfig {
-    /// Base URL for GitHub Pages distribution
+    /// Base URL for GitHub Pages distribution of the Wine runtime. Whisky
+    /// ReBrewed keeps using the runtime frankea/Whisky publishes, since it
+    /// is the same Wine build; only the app itself is distributed separately.
     public static let baseURL = "https://frankea.github.io/Whisky"
 
     /// URL for the WhiskyWine version plist file
@@ -28,8 +30,18 @@ public enum DistributionConfig {
     /// Base URL for GitHub Releases downloads
     public static let releasesBaseURL = "https://github.com/frankea/Whisky/releases/download"
 
-    /// URL for the Sparkle appcast feed
-    public static let appcastURL = "\(baseURL)/appcast.xml"
+    /// Base URL for Whisky ReBrewed's own GitHub Pages site.
+    public static let appBaseURL = "https://theroben-dev.github.io/Whisky-Alternative"
+
+    /// URL for the Sparkle appcast feed. Whisky ReBrewed's own, so an install
+    /// is never "updated" into upstream Whisky.
+    public static let appcastURL = "\(appBaseURL)/appcast.xml"
+
+    /// The project's repository, for Help menu links and issue reports.
+    public static let repositoryURL = "https://github.com/TheRoben-Dev/Whisky-Alternative"
+
+    /// Where to report a problem.
+    public static let issuesURL = "\(repositoryURL)/issues"
 
     /// Constructs the download URL for Wine Libraries from GitHub Releases
     /// - Parameter version: The version string (e.g., "2.5.0")

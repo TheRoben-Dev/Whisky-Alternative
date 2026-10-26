@@ -196,7 +196,7 @@ struct WhiskyApp: App {
                     }
                 }
                 .keyboardShortcut("I", modifiers: [.command])
-                Button("Migrate from the Original Whisky…") {
+                Button("Import Bottles from Whisky…") {
                     showMigrate = true
                 }
             }
@@ -216,12 +216,12 @@ struct WhiskyApp: App {
             }
             CommandGroup(replacing: .help) {
                 Button("help.github") {
-                    if let url = URL(string: "https://github.com/frankea/Whisky") {
+                    if let url = URL(string: DistributionConfig.repositoryURL) {
                         openURL(url)
                     }
                 }
                 Button("help.issues") {
-                    if let url = URL(string: "https://github.com/frankea/Whisky/issues") {
+                    if let url = URL(string: DistributionConfig.issuesURL) {
                         openURL(url)
                     }
                 }
@@ -239,7 +239,7 @@ struct WhiskyApp: App {
         Settings {
             SettingsView()
         }
-        MenuBarExtra("Whisky", systemImage: "wineglass", isInserted: $showMenuBarExtra) {
+        MenuBarExtra("Whisky ReBrewed", systemImage: "wineglass", isInserted: $showMenuBarExtra) {
             WhiskyMenuBarView()
                 .environmentObject(BottleVM.shared)
         }

@@ -19,9 +19,9 @@
 import SwiftUI
 import WhiskyKit
 
-/// Lets the user import bottles created by the archived original Whisky app, which this
-/// fork doesn't see automatically because it uses a different bundle identifier. Bottles
-/// are referenced in place (not copied), so the import is non-destructive.
+/// Lets the user import bottles created by Whisky (frankea's fork or the archived original),
+/// which Whisky ReBrewed doesn't see automatically because it uses a different bundle
+/// identifier. Bottles are referenced in place (not copied), so the import is non-destructive.
 struct MigrateBottlesSheet: View {
     @EnvironmentObject var bottleVM: BottleVM
     @Environment(\.dismiss) private var dismiss
@@ -59,12 +59,12 @@ struct MigrateBottlesSheet: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Import Bottles from the Original Whisky")
+            Text("Import Bottles from Whisky")
                 .font(.headline)
             Text(
                 """
-                These bottles were created by the archived original Whisky app. Importing references \
-                them in place — your files aren't moved or copied, and the original app keeps working.
+                These bottles were created by Whisky. Importing references them in place — your \
+                files aren't moved or copied, and Whisky keeps working if it's still installed.
                 """
             )
             .font(.subheadline)
@@ -81,7 +81,7 @@ struct MigrateBottlesSheet: View {
                 Image(systemName: "tray")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
-                Text("No bottles from the original Whisky were found.")
+                Text("No bottles from Whisky were found.")
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -129,7 +129,10 @@ struct MigrateBottlesSheet: View {
         guard !didLoad else { return }
         didLoad = true
         rows = LegacyBottleImport
-            .importableBottles(existingPaths: bottleVM.bottlesList.paths)
+            .importableBottles(
+                legacyContainers: LegacyBottleImport.legacyContainerDirectories,
+                existingPaths: bottleVM.bottlesList.paths
+            )
             .map { Row(bottle: $0, isSelected: true) }
     }
 
