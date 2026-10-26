@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   removed, so nothing is sent even with consent.
 
 ### Added
+- A Build Release workflow: pushing a `v*` tag builds an ad-hoc signed
+  `Whisky ReBrewed.app` on GitHub Actions and attaches it to a release, so
+  there is a download without a Developer ID. It is not notarized, so macOS
+  asks once before the first launch.
 - "Import Bottles from Whisky…" now finds bottles from frankea/Whisky as well
   as the archived original, and references them in place.
 - Per-game play statistics. Whisky now watches a launched program until it

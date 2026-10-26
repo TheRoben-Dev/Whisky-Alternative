@@ -1,0 +1,119 @@
+name: Build Release
+
+# Builds Whisky ReBrewed and attaches it to a GitHub release, so there is
+# something to download without a Mac set up for signing.
+#
+# The app is ad-hoc signed, not signed with a Developer ID or notarized: that
+# needs a paid Apple Developer account. macOS therefore asks once before the
+# first launch (right-click → Open, or System Settings → Privacy & Security →
+# Open Anyway). scripts/release.sh is still the path for a notarized build once
+# a Developer ID exists.
+#
+# Push a tag such as v0.1.0 (or v0.1.0-alpha for a pre-release) to publish one.
+# Running it by hand builds the same zip as a workflow artifact without
+# publishing anything.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  XCODE_VERSION: latest-stable
+  APP_NAME: Whisky ReBrewed
+
+jobs:
+  build:
+    name: Build and publish
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Work out the version
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Building $APP_NAME $version"
+
+      # Ad-hoc identity ("-") rather than no signing at all: an unsigned bundle
+      # downloaded from the internet is reported as damaged on Apple silicon,
+      # while an ad-hoc signed one only needs the one-time Open Anyway.
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild -project Whisky.xcodeproj \
+            -scheme Whisky \
+            -configuration Release \
+            -derivedDataPath build \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGNING_REQUIRED=NO \
+            build | tail -n 40
+
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          built="build/Build/Products/Release/Whisky.app"
+          [ -d "$built" ] || { echo "::error::$built not found"; exit 1; }
+
+          mkdir -p dist-out
+          app="dist-out/$APP_NAME.app"
+          ditto "$built" "$app"
+          # Re-sign the whole bundle, frameworks and extensions included, so
+          # every nested binary carries the same ad-hoc signature.
+          codesign --force --deep --sign - --preserve-metadata=entitlements "$app"
+          codesign --verify --deep --strict "$app"
+
+          zip="dist-out/Whisky-ReBrewed-${{ steps.version.outputs.version }}.zip"
+          ditto -c -k --keepParent "$app" "$zip"
+          shasum -a 256 "$zip" | tee "$zip.sha256"
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Whisky-ReBrewed-${{ steps.version.outputs.version }}
+          path: dist-out/*.zip*
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          prerelease=""
+          case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
+          cat > notes.md <<'NOTES'
+          Unzip and move **Whisky ReBrewed.app** to Applications.
+
+          This build is not notarized, so macOS asks before the first launch:
+          right-click the app and choose **Open**, or open it once and then use
+          **System Settings → Privacy & Security → Open Anyway**.
+
+          The Wine runtime downloads on first launch, the same as Whisky. Your
+          existing Whisky bottles can be brought over with
+          **File → Import Bottles from Whisky…** without moving them.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" dist-out/*.zip dist-out/*.sha256 \
+            --title "$APP_NAME $VERSION" \
+            --notes-file notes.md \
+            --verify-tag $prerelease
