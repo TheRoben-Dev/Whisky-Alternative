@@ -25,7 +25,7 @@ import WhiskyKit
 enum PlayStatsFormat {
     /// "1h 30m", or "45m" under an hour. Seconds are noise at this scale.
     static func duration(_ seconds: TimeInterval) -> String {
-        let allowed: Set<Duration.UnitsFormatStyle.Unit> = seconds >= 3600 ? [.hours, .minutes] : [.minutes]
+        let allowed: Set<Duration.UnitsFormatStyle.Unit> = seconds >= 3_600 ? [.hours, .minutes] : [.minutes]
         return Duration.seconds(max(seconds, 60))
             .formatted(.units(allowed: allowed, width: .narrow))
     }

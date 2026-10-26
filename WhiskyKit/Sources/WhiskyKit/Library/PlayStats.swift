@@ -87,7 +87,7 @@ public struct PlayStats: Codable, Equatable, Sendable {
         endingAt now: Date = Date(), calendar: Calendar = .current
     ) -> [(day: Date, seconds: TimeInterval)] {
         let today = calendar.startOfDay(for: now)
-        return (0..<Self.dailyHistoryDays).reversed().compactMap { offset in
+        return (0 ..< Self.dailyHistoryDays).reversed().compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             return (day, daily[day] ?? 0)
         }
