@@ -71,8 +71,8 @@ struct LibraryRow: Identifiable {
     let item: LibraryEntry
     let bottleName: String?
     let lastPlayed: Date?
-    /// Lifetime playtime from ``PlayStats``. Zero for Steam games, whose
-    /// sessions are not tracked yet.
+    /// Lifetime playtime from ``PlayStats``. Steam games count sessions
+    /// started from Whisky, timed by their ``SteamClientOrchestrator``.
     let playtime: TimeInterval
 
     var id: String { item.id }
@@ -179,13 +179,37 @@ final class LibraryModel: ObservableObject {
             RunLogStore.load(for: url.lastPathComponent, in: item.bottleURL)
                 .entries.map(\.startTime).max()
         case let .steam(appID):
-            routed[appID]
+            // A session's end is later than its launch, so the stats are the
+            // fresher answer once the game has been played and closed.
+            [routed[appID], stats(for: item).lastPlayed].compactMap(\.self).max()
         }
     }
 
     private func playtime(for item: LibraryEntry) -> TimeInterval {
-        guard case let .program(url) = item.launch else { return 0 }
-        return PlayStatsStore.load(for: url.lastPathComponent, in: item.bottleURL).totalPlaytime
+        stats(for: item).totalPlaytime
+    }
+
+    private func stats(for item: LibraryEntry) -> PlayStats {
+        switch item.launch {
+        case let .program(url):
+            PlayStatsStore.load(for: url.lastPathComponent, in: item.bottleURL)
+        case let .steam(appID):
+            PlayStatsStore.load(for: PlayStatsStore.steamName(appID: appID), in: item.bottleURL)
+        }
+    }
+
+    /// Re-reads playtime and last played for every row, after a Steam game's
+    /// session was saved. Cheaper than a reload: nothing is enumerated.
+    private func refreshPlayStats() {
+        let routed = GameRouting().lastLaunches()
+        rows = sorted(rows.map { row in
+            LibraryRow(
+                item: row.item,
+                bottleName: row.bottleName,
+                lastPlayed: lastPlayed(for: row.item, routed: routed),
+                playtime: playtime(for: row.item)
+            )
+        })
     }
 
     /// Launchers last whatever the sort is. A storefront client is how you reach
@@ -333,6 +357,12 @@ extension LibraryModel {
         made.$runningAppIds
             .sink { [weak self] running in
                 self?.steamRunning[url] = running
+            }
+            .store(in: &cancellables)
+        made.$recordedSessions
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.refreshPlayStats()
             }
             .store(in: &cancellables)
         made.$launchError

@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   icon, and any entry can be given its own cover with "Choose Cover Art…" or by
   dropping an image onto it. Covers are stored in the bottle's `Library Covers`
   folder. The wide cards are still available from the toolbar's Layout menu.
+- Playtime for Steam games. A game started from the library is timed until
+  its last process exits, and its playtime, session count and last played
+  show in the library like any other game's.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked

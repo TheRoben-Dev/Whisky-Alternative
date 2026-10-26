@@ -106,6 +106,13 @@ public struct PlayStats: Codable, Equatable, Sendable {
 public enum PlayStatsStore {
     private static let logger = Logger(subsystem: Bundle.whiskyBundleIdentifier, category: "PlayStatsStore")
 
+    /// The name a Steam game's stats are stored under. A Steam game has no one
+    /// executable to name them after, and its App ID is stable across updates
+    /// that rename the executable.
+    public static func steamName(appID: Int) -> String {
+        "steam-\(appID)"
+    }
+
     /// `{bottle}/Program Settings/{programName}.play-stats.plist`
     public static func statsURL(for programName: String, in bottleURL: URL) -> URL {
         bottleURL
@@ -187,18 +194,37 @@ public struct PlaySessionTracker: Sendable {
     /// - Returns: The session's start and end, or `nil` if the process never
     ///   appeared or the task was cancelled before it exited.
     public func track(imageName: String) async -> (start: Date, end: Date)? {
-        let name = imageName.lowercased()
+        await track(anyOf: [imageName])
+    }
 
-        let deadline = now().addingTimeInterval(appearTimeout)
+    /// Tracks one session of whichever of `imageNames` runs.
+    ///
+    /// The session lasts from the first of them appearing until none is left,
+    /// which is what a Steam game needs: it can be a launcher that hands off to
+    /// the real executable, and either one running is the game being played.
+    ///
+    /// - Parameter alreadyRunning: Skips the wait for the process to appear and
+    ///   starts the session now, for a caller that has just seen it.
+    /// - Returns: The session's start and end, or `nil` if no process appeared
+    ///   or the task was cancelled before the game exited.
+    public func track(anyOf imageNames: Set<String>, alreadyRunning: Bool = false) async -> (start: Date, end: Date)? {
+        let names = Set(imageNames.map { $0.lowercased() })
+        guard !names.isEmpty else { return nil }
+
         var start: Date?
-        while start == nil {
-            if await runningImageNames()?.contains(name) == true {
-                start = now()
-                break
+        if alreadyRunning {
+            start = now()
+        } else {
+            let deadline = now().addingTimeInterval(appearTimeout)
+            while start == nil {
+                if let running = await runningImageNames(), !running.isDisjoint(with: names) {
+                    start = now()
+                    break
+                }
+                guard now() < deadline else { return nil }
+                try? await Task.sleep(for: pollInterval)
+                if Task.isCancelled { return nil }
             }
-            guard now() < deadline else { return nil }
-            try? await Task.sleep(for: pollInterval)
-            if Task.isCancelled { return nil }
         }
 
         var lastSeen = start ?? now()
@@ -206,7 +232,7 @@ public struct PlaySessionTracker: Sendable {
             try? await Task.sleep(for: pollInterval)
             if Task.isCancelled { return nil }
             guard let running = await runningImageNames() else { continue }
-            if running.contains(name) {
+            if !running.isDisjoint(with: names) {
                 lastSeen = now()
             } else {
                 // The exit happened somewhere in the last interval; the last

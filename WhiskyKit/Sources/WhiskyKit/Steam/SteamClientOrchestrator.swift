@@ -70,19 +70,24 @@ public final class SteamClientOrchestrator: ObservableObject {
         public var trackingInterval: Duration = .seconds(10)
         /// How long one process snapshot answers for.
         public var snapshotLifetime: TimeInterval = 1
+        /// How often a play session re-reads the process list. Playtime is
+        /// only as precise as this, which is fine for minutes and hours.
+        public var playSessionInterval: Duration = .seconds(15)
 
         public init(
             clientReadyTimeout: TimeInterval = 90,
             launchGrace: TimeInterval = 120,
             pollInterval: Duration = .seconds(2),
             trackingInterval: Duration = .seconds(10),
-            snapshotLifetime: TimeInterval = 1
+            snapshotLifetime: TimeInterval = 1,
+            playSessionInterval: Duration = .seconds(15)
         ) {
             self.clientReadyTimeout = clientReadyTimeout
             self.launchGrace = launchGrace
             self.pollInterval = pollInterval
             self.trackingInterval = trackingInterval
             self.snapshotLifetime = snapshotLifetime
+            self.playSessionInterval = playSessionInterval
         }
     }
 
@@ -91,6 +96,9 @@ public final class SteamClientOrchestrator: ObservableObject {
     /// App IDs whose executables are currently in the bottle's process list.
     @Published public private(set) var runningAppIds: Set<Int> = []
     @Published public var launchError: String?
+    /// Bumped each time a play session is saved, so the library can refresh
+    /// the playtime it shows.
+    @Published public private(set) var recordedSessions = 0
 
     let bottle: Bottle
     let driver: SteamClientDriver
@@ -101,6 +109,10 @@ public final class SteamClientOrchestrator: ObservableObject {
     /// The in-flight client startup, shared by every concurrent launch.
     private var clientStartup: Task<Void, Error>?
     private var launchTasks: [Int: Task<Void, Never>] = [:]
+    /// Games being timed, by App ID. Kept apart from ``launchTasks`` because
+    /// ``stop()`` runs whenever the library leaves the screen, and a game
+    /// that is still being played should still be timed.
+    private var playSessions: [Int: Task<Void, Never>] = [:]
     var processSnapshot: (processes: [WineProcess], taken: Date)?
     var snapshotRead: Task<[WineProcess], Never>?
 
@@ -212,9 +224,52 @@ public final class SteamClientOrchestrator: ObservableObject {
             return
         }
 
-        if await !waitForGameProcess(installURL: game.installURL) {
+        if await waitForGameProcess(installURL: game.installURL) {
+            timePlaySession(of: game)
+        } else {
             launchError = String(localized: "steam.launch.timeout")
         }
+    }
+
+    /// Times the game from now until its last process exits, then records the
+    /// session under the game's App ID.
+    private func timePlaySession(of game: SteamGame) {
+        guard playSessions[game.appId] == nil else { return }
+        let names = executableNamesByAppId[game.appId] ?? SteamLibrary.executableNames(under: game.installURL)
+        guard !names.isEmpty else { return }
+
+        // An orchestrator that has gone away can no longer see the game, so
+        // the session ends where it was last seen rather than running forever.
+        let tracker = PlaySessionTracker(pollInterval: timing.playSessionInterval) { [weak self] in
+            guard let self else { return [] }
+            return await self.playSessionImageNames()
+        }
+        let appID = game.appId
+        let bottleURL = bottle.url
+        playSessions[appID] = Task { [weak self] in
+            let session = await tracker.track(anyOf: names, alreadyRunning: true)
+            if let session {
+                PlayStatsStore.recordSession(
+                    start: session.start,
+                    end: session.end,
+                    for: PlayStatsStore.steamName(appID: appID),
+                    in: bottleURL
+                )
+            }
+            self?.playSessions[appID] = nil
+            if session != nil {
+                self?.recordedSessions += 1
+            }
+        }
+    }
+
+    /// The process list as a play session needs it: empty once Wine itself has
+    /// exited, which ends the session, and `nil` when Wine is up but the list
+    /// came back empty, which is a failed read rather than the game closing.
+    private func playSessionImageNames() async -> Set<String>? {
+        guard await driver.hostWineImageNames().isEmpty == false else { return [] }
+        let names = await Set(runningProcesses().map { $0.imageName.lowercased() })
+        return names.isEmpty ? nil : names
     }
 
     private func ensureClientRunning(steamExe: URL) async throws {
