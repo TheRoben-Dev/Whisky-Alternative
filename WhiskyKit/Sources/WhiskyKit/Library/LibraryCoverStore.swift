@@ -57,7 +57,7 @@ public enum LibraryCoverStore {
     /// resolves symlinks (`/var` becomes `/private/var`): the same cover would
     /// otherwise have two URLs, and the image cache, keyed by URL, would keep
     /// showing a replaced cover.
-    static func coverNames(in bottleURL: URL) -> [String: URL] {
+    static func coverFiles(in bottleURL: URL) -> [String: URL] {
         let folder = folder(in: bottleURL)
         let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false))) ?? []
         return Dictionary(
