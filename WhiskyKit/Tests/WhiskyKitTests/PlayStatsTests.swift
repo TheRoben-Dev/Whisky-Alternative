@@ -132,4 +132,35 @@ final class PlayStatsTests: XCTestCase {
         let session = await tracker(script, appearTimeout: 150).track(imageName: "game.exe")
         XCTAssertNil(session)
     }
+
+    func testTrackerFollowsAHandOffBetweenExecutables() async {
+        // A launcher starts, hands off to the game and exits; the session runs
+        // until neither is left.
+        let script = Script([["launcher.exe"], ["launcher.exe", "game.exe"], ["game.exe"], ["steam.exe"]])
+        let session = await tracker(script).track(anyOf: ["Launcher.exe", "Game.exe"])
+
+        XCTAssertEqual(session?.start, Date(timeIntervalSince1970: 60))
+        XCTAssertEqual(session?.end, Date(timeIntervalSince1970: 180))
+    }
+
+    func testTrackerAlreadyRunningStartsNow() async {
+        let script = Script([["game.exe"], ["game.exe"], ["steam.exe"]])
+        let session = await tracker(script).track(anyOf: ["game.exe"], alreadyRunning: true)
+
+        // Starts before the first read, last seen on read 2.
+        XCTAssertEqual(session?.start, Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(session?.end, Date(timeIntervalSince1970: 120))
+    }
+
+    func testSteamStatsAreStoredByAppID() throws {
+        let bottle = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: bottle) }
+        let name = PlayStatsStore.steamName(appID: 1_086_940)
+        let start = Date(timeIntervalSince1970: 1_000_000)
+
+        PlayStatsStore.recordSession(start: start, end: start.addingTimeInterval(1_800), for: name, in: bottle)
+
+        XCTAssertEqual(name, "steam-1086940")
+        XCTAssertEqual(PlayStatsStore.load(for: name, in: bottle).totalPlaytime, 1_800)
+    }
 }
