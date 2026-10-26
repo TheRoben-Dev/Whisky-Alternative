@@ -49,10 +49,23 @@ public enum LibraryCoverStore {
     /// The cover the person chose for `entry`, if they chose one.
     public static func customCoverURL(for entry: LibraryEntry) -> URL? {
         let key = key(for: entry)
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: folder(in: entry.bottleURL), includingPropertiesForKeys: nil
+        return coverFiles(in: entry.bottleURL)[key]
+    }
+
+    /// Each cover file in the bottle by its key, as a URL under the bottle's
+    /// own path. Built from names rather than taken from the listing, which
+    /// resolves symlinks (`/var` becomes `/private/var`): the same cover would
+    /// otherwise have two URLs, and the image cache, keyed by URL, would keep
+    /// showing a replaced cover.
+    static func coverNames(in bottleURL: URL) -> [String: URL] {
+        let folder = folder(in: bottleURL)
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false))) ?? []
+        return Dictionary(
+            names.filter { !$0.hasPrefix(".") }.map { name in
+                ((name as NSString).deletingPathExtension, folder.appending(path: name))
+            },
+            uniquingKeysWith: { first, _ in first }
         )
-        return contents?.first { $0.deletingPathExtension().lastPathComponent == key }
     }
 
     /// Copies the image at `source` in as `entry`'s cover, replacing any
@@ -90,13 +103,7 @@ public enum LibraryCoverStore {
         var covers: [URL: [String: URL]] = [:]
         return entries.map { entry in
             if covers[entry.bottleURL] == nil {
-                let contents = (try? FileManager.default.contentsOfDirectory(
-                    at: folder(in: entry.bottleURL), includingPropertiesForKeys: nil
-                )) ?? []
-                covers[entry.bottleURL] = Dictionary(
-                    contents.map { ($0.deletingPathExtension().lastPathComponent, $0) },
-                    uniquingKeysWith: { first, _ in first }
-                )
+                covers[entry.bottleURL] = coverFiles(in: entry.bottleURL)
             }
             guard let custom = covers[entry.bottleURL]?[key(for: entry)] else { return entry }
             return entry.withCover(custom)
