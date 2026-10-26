@@ -286,7 +286,8 @@ final class ControllerNavigator: ObservableObject {
                 charactersIgnoringModifiers: stroke.charactersIgnoringModifiers ?? stroke.characters,
                 isARepeat: false,
                 keyCode: stroke.keyCode
-            ) else { continue }
+            )
+            else { continue }
             // Through the application rather than the window, so Command
             // shortcuts reach the main menu the way a real key press does.
             NSApp.sendEvent(event)
