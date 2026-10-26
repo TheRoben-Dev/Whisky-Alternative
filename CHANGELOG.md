@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Per-game play statistics. Whisky now watches a launched program until it
+  exits and records total playtime, session count, first and last played,
+  longest session and the last 14 days of activity, stored beside the run
+  history in `Program Settings`.
+
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked
   builtin copy back in its place. Wine's loader only finds a builtin through

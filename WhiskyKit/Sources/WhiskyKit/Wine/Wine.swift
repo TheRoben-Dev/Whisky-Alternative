@@ -381,6 +381,8 @@ public class Wine {
         )
         RunLogStore.save(updatedHistory, for: programName, in: bottle.url)
 
+        trackPlaySession(of: programName, in: bottle)
+
         return ProgramRunResult(exitCode: exitCode, logFileURL: logFileURL, runLogEntryId: runLogEntry.id)
     }
 
@@ -1618,3 +1620,28 @@ public extension Wine {
 }
 
 // swiftlint:enable type_body_length
+
+// MARK: - Play sessions
+
+extension Wine {
+    /// Watches a launched program until it exits and adds the session to its
+    /// ``PlayStats``.
+    ///
+    /// Detached because the launch returns as soon as `wine start` hands the
+    /// program off, while the session can run for hours.
+    @MainActor
+    static func trackPlaySession(of programName: String, in bottle: Bottle) {
+        let bottleURL = bottle.url
+        let tracker = PlaySessionTracker(runningImageNames: { @MainActor in
+            guard let processes = try? await Wine.listProcesses(for: bottle) else { return nil }
+            return Set(processes.map { $0.imageName.lowercased() })
+        })
+
+        Task.detached(priority: .utility) {
+            guard let session = await tracker.track(imageName: programName) else { return }
+            PlayStatsStore.recordSession(
+                start: session.start, end: session.end, for: programName, in: bottleURL
+            )
+        }
+    }
+}
