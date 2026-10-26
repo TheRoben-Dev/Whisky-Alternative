@@ -335,7 +335,7 @@ final class BottleVM: ObservableObject {
         var lines: [String] = []
         lines.reserveCapacity(32)
 
-        lines.append("Whisky Bottle Creation Diagnostics (Issue #61)")
+        lines.append("Whisky ReBrewed Bottle Creation Diagnostics (Issue #61)")
         lines.append("Timestamp: \(Date().formatted())")
         lines.append("")
         appendBottleCreationInputLines(into: &lines, context: context)
@@ -364,7 +364,7 @@ final class BottleVM: ObservableObject {
     ) {
         lines.append("[SYSTEM]")
         lines.append("macOS Version: \(MacOSVersion.current.description)")
-        lines.append("Whisky Version: \(whiskyVersionString)")
+        lines.append("Whisky ReBrewed Version: \(whiskyVersionString)")
         let whiskyWineInstalled = WhiskyWineInstaller.isWhiskyWineInstalled() ? "yes" : "no"
         lines.append("WhiskyWine Installed: \(whiskyWineInstalled)")
         if let whiskyWineVersion = WhiskyWineInstaller.whiskyWineVersion() {
