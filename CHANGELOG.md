@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the sidebar, LB/RB to move between controls, LT/RT to page, the right stick
   to scroll, View for search and Menu for settings. Button prompts appear while
   the controller is in use, and it can be turned off in Settings.
+- A console-style library: a dark backdrop, a "Continue playing" banner for
+  the last game you played with a large Play button, and an accent glow on the
+  focused card. The D-pad moves between the banner and the grid.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked
