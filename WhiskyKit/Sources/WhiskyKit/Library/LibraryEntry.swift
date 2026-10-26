@@ -57,6 +57,9 @@ public struct LibraryEntry: Identifiable, Hashable, Sendable {
     /// caches its own banners inside the bottle, so a Steam game shows the art
     /// its store page uses without anything being fetched.
     public let artworkURL: URL?
+    /// Portrait box art for the cover grid: a cover the person chose, or the
+    /// 600x900 capsule Steam caches for its own library.
+    public let coverURL: URL?
     public let bottleURL: URL
     public let source: LibrarySourceID
     public let launch: Launch
@@ -74,6 +77,7 @@ public struct LibraryEntry: Identifiable, Hashable, Sendable {
         name: String,
         iconURL: URL?,
         artworkURL: URL? = nil,
+        coverURL: URL? = nil,
         bottleURL: URL,
         source: LibrarySourceID,
         launch: Launch,
@@ -83,10 +87,27 @@ public struct LibraryEntry: Identifiable, Hashable, Sendable {
         self.name = name
         self.iconURL = iconURL
         self.artworkURL = artworkURL
+        self.coverURL = coverURL
         self.bottleURL = bottleURL
         self.source = source
         self.launch = launch
         self.launcher = launcher
+    }
+
+    /// The same entry showing a different cover, for laying a custom cover over
+    /// the one its source found.
+    public func withCover(_ coverURL: URL?) -> LibraryEntry {
+        LibraryEntry(
+            id: id,
+            name: name,
+            iconURL: iconURL,
+            artworkURL: artworkURL,
+            coverURL: coverURL,
+            bottleURL: bottleURL,
+            source: source,
+            launch: launch,
+            launcher: launcher
+        )
     }
 }
 
@@ -145,6 +166,7 @@ public enum SteamLibrarySource: LibrarySource {
                 name: game.name,
                 iconURL: steamRoot.flatMap { iconURL(appID: game.appId, steamRoot: $0) },
                 artworkURL: steamRoot.flatMap { artworkURL(appID: game.appId, steamRoot: $0) },
+                coverURL: steamRoot.flatMap { coverURL(appID: game.appId, steamRoot: $0) },
                 bottleURL: url,
                 source: id,
                 launch: .steam(appID: game.appId)
@@ -162,11 +184,36 @@ public enum SteamLibrarySource: LibrarySource {
     /// Landscape first because that is the shape of a card. A portrait capsule
     /// is the fallback and gets cropped, which still beats an empty card.
     public static func artworkURL(appID: Int, steamRoot: URL) -> URL? {
-        let landscape = ["library_header.jpg", "header.jpg", "\(appID)_header.jpg"]
-        let portrait = ["library_capsule.jpg", "library_600x900.jpg", "\(appID)_library_600x900.jpg"]
-        let cached = cachedFiles(appID: appID, steamRoot: steamRoot)
+        firstCached(named: landscapeNames(appID) + portraitNames(appID), appID: appID, steamRoot: steamRoot)
+    }
 
-        for name in landscape + portrait {
+    /// The portrait capsule Steam shows in its own library grid, for the cover
+    /// grid. Only portrait: a wide banner letterboxed into a poster frame looks
+    /// like a mistake, so a game without one gets the drawn fallback instead.
+    public static func coverURL(appID: Int, steamRoot: URL) -> URL? {
+        firstCached(named: portraitNames(appID), appID: appID, steamRoot: steamRoot)
+    }
+
+    private static func landscapeNames(_ appID: Int) -> [String] {
+        ["library_header.jpg", "header.jpg", "\(appID)_header.jpg"]
+    }
+
+    /// The 2x capsule first, since a cover is drawn a good deal larger than the
+    /// 1x one's 300pt width on a Retina screen.
+    private static func portraitNames(_ appID: Int) -> [String] {
+        [
+            "library_600x900_2x.jpg",
+            "library_capsule.jpg",
+            "library_600x900.jpg",
+            "\(appID)_library_600x900_2x.jpg",
+            "\(appID)_library_600x900.jpg"
+        ]
+    }
+
+    /// The first of `names` Steam has cached for `appID`, in the order given.
+    private static func firstCached(named names: [String], appID: Int, steamRoot: URL) -> URL? {
+        let cached = cachedFiles(appID: appID, steamRoot: steamRoot)
+        for name in names {
             if let match = cached.first(where: { $0.lastPathComponent == name }) {
                 return match
             }
@@ -199,7 +246,12 @@ public enum SteamLibrarySource: LibrarySource {
         )?.compactMap { $0 as? URL } ?? []
 
         // The layout Steam used before it made a folder per app.
-        let flat = ["\(appID)_header.jpg", "\(appID)_library_600x900.jpg"]
+        let flatNames = [
+            "\(appID)_header.jpg",
+            "\(appID)_library_600x900.jpg",
+            "\(appID)_library_600x900_2x.jpg"
+        ]
+        let flat = flatNames
             .map { cache.appending(path: $0) }
             .filter { FileManager.default.fileExists(atPath: $0.path(percentEncoded: false)) }
 

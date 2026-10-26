@@ -40,6 +40,30 @@ enum LibrarySort: String, CaseIterable, Identifiable {
     }
 }
 
+/// How the library grid draws its entries.
+enum LibraryLayout: String, CaseIterable, Identifiable {
+    /// Portrait box art, the way console launchers show a library.
+    case covers
+    /// Wide cards coloured by the icon, which suit programs without art.
+    case cards
+
+    var id: String { rawValue }
+
+    var label: LocalizedStringResource {
+        switch self {
+        case .covers: "library.layout.covers"
+        case .cards: "library.layout.cards"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .covers: "rectangle.portrait.on.rectangle.portrait"
+        case .cards: "rectangle.grid.2x2"
+        }
+    }
+}
+
 /// A library entry plus what the grid needs to draw it. `bottleName`,
 /// `lastPlayed` and `playtime` are presentation, which is why they live here
 /// rather than in ``LibraryEntry``.
@@ -47,8 +71,8 @@ struct LibraryRow: Identifiable {
     let item: LibraryEntry
     let bottleName: String?
     let lastPlayed: Date?
-    /// Lifetime playtime from ``PlayStats``. Zero for Steam games, whose
-    /// sessions are not tracked yet.
+    /// Lifetime playtime from ``PlayStats``. Steam games count sessions
+    /// started from Whisky, timed by their ``SteamClientOrchestrator``.
     let playtime: TimeInterval
 
     var id: String { item.id }
@@ -126,7 +150,10 @@ final class LibraryModel: ObservableObject {
             let pinned = PinnedLibrarySource.items(inBottleAt: url, settings: bottle.settings)
             let steam = await Task.detached { SteamLibrarySource.entries(inBottleAt: url) }.value
 
-            for item in LibraryCatalogue.merge([pinned, steam]) {
+            let merged = LibraryCatalogue.merge([pinned, steam])
+            let covered = await Task.detached { LibraryCoverStore.applyingCustomCovers(to: merged) }.value
+
+            for item in covered {
                 built.append(
                     LibraryRow(
                         item: item,
@@ -152,13 +179,37 @@ final class LibraryModel: ObservableObject {
             RunLogStore.load(for: url.lastPathComponent, in: item.bottleURL)
                 .entries.map(\.startTime).max()
         case let .steam(appID):
-            routed[appID]
+            // A session's end is later than its launch, so the stats are the
+            // fresher answer once the game has been played and closed.
+            [routed[appID], stats(for: item).lastPlayed].compactMap(\.self).max()
         }
     }
 
     private func playtime(for item: LibraryEntry) -> TimeInterval {
-        guard case let .program(url) = item.launch else { return 0 }
-        return PlayStatsStore.load(for: url.lastPathComponent, in: item.bottleURL).totalPlaytime
+        stats(for: item).totalPlaytime
+    }
+
+    private func stats(for item: LibraryEntry) -> PlayStats {
+        switch item.launch {
+        case let .program(url):
+            PlayStatsStore.load(for: url.lastPathComponent, in: item.bottleURL)
+        case let .steam(appID):
+            PlayStatsStore.load(for: PlayStatsStore.steamName(appID: appID), in: item.bottleURL)
+        }
+    }
+
+    /// Re-reads playtime and last played for every row, after a Steam game's
+    /// session was saved. Cheaper than a reload: nothing is enumerated.
+    private func refreshPlayStats() {
+        let routed = GameRouting().lastLaunches()
+        rows = sorted(rows.map { row in
+            LibraryRow(
+                item: row.item,
+                bottleName: row.bottleName,
+                lastPlayed: lastPlayed(for: row.item, routed: routed),
+                playtime: playtime(for: row.item)
+            )
+        })
     }
 
     /// Launchers last whatever the sort is. A storefront client is how you reach
@@ -201,6 +252,31 @@ final class LibraryModel: ObservableObject {
         let rhs = second.bottleName ?? ""
         guard lhs == rhs else { return lhs.localizedStandardCompare(rhs) == .orderedAscending }
         return byName(first, second)
+    }
+}
+
+// MARK: - Covers
+
+extension LibraryModel {
+    /// Makes the image at `source` the cover for `row`, then redraws the grid.
+    func setCover(from source: URL, for row: LibraryRow, bottles: [Bottle]) async {
+        do {
+            let stored = try LibraryCoverStore.setCustomCover(from: source, for: row.item)
+            // A replacement in the same format lands at the same path, and the
+            // cache is keyed by path, so without this the old cover stays up.
+            await IconCache.shared.invalidate(url: stored)
+            await reload(bottles: bottles)
+        } catch {
+            toast = ToastData(message: String(localized: "library.cover.failed"), style: .error)
+        }
+    }
+
+    func resetCover(for row: LibraryRow, bottles: [Bottle]) async {
+        if let current = row.item.coverURL {
+            await IconCache.shared.invalidate(url: current)
+        }
+        LibraryCoverStore.removeCustomCover(for: row.item)
+        await reload(bottles: bottles)
     }
 }
 
@@ -281,6 +357,12 @@ extension LibraryModel {
         made.$runningAppIds
             .sink { [weak self] running in
                 self?.steamRunning[url] = running
+            }
+            .store(in: &cancellables)
+        made.$recordedSessions
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.refreshPlayStats()
             }
             .store(in: &cancellables)
         made.$launchError

@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A console-style library: a dark backdrop, a "Continue playing" banner for
   the last game you played with a large Play button, and an accent glow on the
   focused card. The D-pad moves between the banner and the grid.
+- A cover-art library layout, now the default. Steam games show the portrait
+  box art Steam already caches, anything else gets a poster drawn from its
+  icon, and any entry can be given its own cover with "Choose Cover Art…" or by
+  dropping an image onto it. Covers are stored in the bottle's `Library Covers`
+  folder. The wide cards are still available from the toolbar's Layout menu.
+- Playtime for Steam games. A game started from the library is timed until
+  its last process exits, and its playtime, session count and last played
+  show in the library like any other game's.
 - Per-game performance profiles (Balanced, Performance, Compatibility) on each
   program's page, written as ordinary overrides, and a per-game Metal
   performance HUD toggle.

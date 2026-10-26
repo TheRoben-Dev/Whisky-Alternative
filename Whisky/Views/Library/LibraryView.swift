@@ -18,6 +18,7 @@
 
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import WhiskyKit
 
 /// Everything worth launching, across every bottle, most recently played first.
@@ -38,6 +39,7 @@ struct LibraryView: View {
     @Binding var refresh: Bool
 
     @AppStorage("librarySort") private var sort: LibrarySort = .recent
+    @AppStorage("libraryLayout") private var layout: LibraryLayout = .covers
 
     @StateObject private var model = LibraryModel()
     @State private var search: String = ""
@@ -46,9 +48,15 @@ struct LibraryView: View {
 
     /// Must match the grid's `GridItem` and padding below, so arrow movement
     /// lands on the card that is visually above or below.
-    private static let cardMinWidth: CGFloat = 180
-    private static let cardSpacing: CGFloat = 14
+    private static let wideCardSpacing: CGFloat = 14
     private static let gridPadding: CGFloat = 18
+
+    /// 180 for wide cards so two columns fit at the window's own minimum width,
+    /// where the sidebar leaves about 330pt. Covers are narrower, since a 2:3
+    /// poster at 180pt wide is already taller than a screen row of cards.
+    private var cardMinWidth: CGFloat { layout == .covers ? 140 : 180 }
+    private var cardMaxWidth: CGFloat { layout == .covers ? 220 : 320 }
+    private var cardSpacing: CGFloat { layout == .covers ? 20 : Self.wideCardSpacing }
 
     private var bottles: [Bottle] { bottleVM.bottles.filter(\.isAvailable) }
 
@@ -102,6 +110,17 @@ struct LibraryView: View {
     private var sortMenu: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             Menu {
+                Picker("library.layout", selection: $layout) {
+                    ForEach(LibraryLayout.allCases) { option in
+                        Label {
+                            Text(option.label)
+                        } icon: {
+                            Image(systemName: option.systemImage)
+                        }
+                        .tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
                 Picker("library.sort", selection: $sort) {
                     ForEach(LibrarySort.allCases) { option in
                         Text(option.label).tag(option)
@@ -145,25 +164,15 @@ struct LibraryView: View {
                     }
 
                     LazyVGrid(
-                        // 180 rather than 220 so two columns fit at the window's own
-                        // minimum width, where the sidebar leaves about 330pt: one
-                        // column of landscape cards is a list with wasted space.
                         columns: [
-                            GridItem(.adaptive(minimum: Self.cardMinWidth, maximum: 320), spacing: Self.cardSpacing)
+                            GridItem(.adaptive(minimum: cardMinWidth, maximum: cardMaxWidth), spacing: cardSpacing)
                         ],
-                        spacing: Self.cardSpacing
+                        alignment: .leading,
+                        spacing: layout == .covers ? 24 : cardSpacing
                     ) {
                         ForEach(visible) { row in
-                            LibraryCard(
-                                item: row.item,
-                                bottleName: row.bottleName,
-                                lastPlayed: row.lastPlayed,
-                                playtime: row.playtime,
-                                state: model.state(for: row.item),
-                                launch: { model.launch(row, bottles: bottles) },
-                                focus: $focusedRow
-                            )
-                            .contextMenu { menu(for: row) }
+                            gridItem(for: row)
+                                .contextMenu { menu(for: row) }
                         }
                     }
                 }
@@ -182,10 +191,34 @@ struct LibraryView: View {
         }
     }
 
+    @ViewBuilder
+    private func gridItem(for row: LibraryRow) -> some View {
+        switch layout {
+        case .covers:
+            LibraryCoverCard(
+                row: row,
+                state: model.state(for: row.item),
+                launch: { model.launch(row, bottles: bottles) },
+                setCover: { url in Task { await model.setCover(from: url, for: row, bottles: bottles) } },
+                focus: $focusedRow
+            )
+        case .cards:
+            LibraryCard(
+                item: row.item,
+                bottleName: row.bottleName,
+                lastPlayed: row.lastPlayed,
+                playtime: row.playtime,
+                state: model.state(for: row.item),
+                launch: { model.launch(row, bottles: bottles) },
+                focus: $focusedRow
+            )
+        }
+    }
+
     /// How many cards the adaptive grid fits in a row at the current width.
     private var columnCount: Int {
         let available = gridWidth - Self.gridPadding * 2
-        return max(1, Int((available + Self.cardSpacing) / (Self.cardMinWidth + Self.cardSpacing)))
+        return max(1, Int((available + cardSpacing) / (cardMinWidth + cardSpacing)))
     }
 
     /// Moves focus to the card in that direction. The grid needs this because
@@ -231,6 +264,13 @@ struct LibraryView: View {
             Button("library.card.stop") { model.stop(row, bottles: bottles) }
         }
         Divider()
+        Button("library.cover.choose") { chooseCover(for: row) }
+        if LibraryCoverStore.customCoverURL(for: row.item) != nil {
+            Button("library.cover.reset") {
+                Task { await model.resetCover(for: row, bottles: bottles) }
+            }
+        }
+        Divider()
         if case let .program(url) = row.item.launch {
             Button("button.showInFinder") {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -243,6 +283,18 @@ struct LibraryView: View {
         Button("library.card.configure") {
             selectedBottle = row.item.bottleURL
         }
+    }
+
+    /// Asks for an image to use as `row`'s cover.
+    private func chooseCover(for row: LibraryRow) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = String(localized: "library.cover.panelMessage")
+        panel.prompt = String(localized: "library.cover.choosePrompt")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        Task { await model.setCover(from: url, for: row, bottles: bottles) }
     }
 
     private func unpin(_ url: URL, in bottleURL: URL) {
