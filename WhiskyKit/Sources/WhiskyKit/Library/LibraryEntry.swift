@@ -246,11 +246,12 @@ public enum SteamLibrarySource: LibrarySource {
         )?.compactMap { $0 as? URL } ?? []
 
         // The layout Steam used before it made a folder per app.
-        let flat = [
+        let flatNames = [
             "\(appID)_header.jpg",
             "\(appID)_library_600x900.jpg",
             "\(appID)_library_600x900_2x.jpg"
         ]
+        let flat = flatNames
             .map { cache.appending(path: $0) }
             .filter { FileManager.default.fileExists(atPath: $0.path(percentEncoded: false)) }
 

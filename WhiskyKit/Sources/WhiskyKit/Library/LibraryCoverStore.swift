@@ -16,7 +16,6 @@
 //  If not, see https://www.gnu.org/licenses/.
 //
 
-
 import Foundation
 
 /// Covers the person picked for library entries, kept inside the bottle.
