@@ -9,8 +9,9 @@ name: Build Release
 # Open Anyway). scripts/release.sh is still the path for a notarized build once
 # a Developer ID exists.
 #
-# Push a tag such as v0.1.0 (or v0.1.0-alpha for a pre-release) to publish one.
-# Running it by hand builds the same zip as a workflow artifact without
+# Push a tag such as v0.1.0 (or v0.1.0-alpha for a pre-release) to publish one,
+# or run it by hand with a version, which tags the commit it ran on. Running it
+# by hand without a version builds the same zip as a workflow artifact without
 # publishing anything.
 
 on:
@@ -18,6 +19,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish, such as 0.1.0-alpha.1. Leave empty to only build.
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -42,9 +48,13 @@ jobs:
 
       - name: Work out the version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             version="${GITHUB_REF_NAME#v}"
+          elif [ -n "${INPUT_VERSION}" ]; then
+            version="${INPUT_VERSION#v}"
           else
             version="0.0.0-dev.${GITHUB_RUN_NUMBER}"
           fi
@@ -95,7 +105,7 @@ jobs:
           path: dist-out/*.zip*
 
       - name: Publish release
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || inputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -113,7 +123,14 @@ jobs:
           existing Whisky bottles can be brought over with
           **File → Import Bottles from Whisky…** without moving them.
           NOTES
-          gh release create "$GITHUB_REF_NAME" dist-out/*.zip dist-out/*.sha256 \
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="$GITHUB_REF_NAME"
+            target="--verify-tag"
+          else
+            tag="v$VERSION"
+            target="--target=$GITHUB_SHA"
+          fi
+          gh release create "$tag" dist-out/*.zip dist-out/*.sha256 \
             --title "$APP_NAME $VERSION" \
             --notes-file notes.md \
-            --verify-tag $prerelease
+            $target $prerelease
