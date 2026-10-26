@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A console-style library: a dark backdrop, a "Continue playing" banner for
   the last game you played with a large Play button, and an accent glow on the
   focused card. The D-pad moves between the banner and the grid.
+- Per-game performance profiles (Balanced, Performance, Compatibility) on each
+  program's page, written as ordinary overrides, and a per-game Metal
+  performance HUD toggle.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked
