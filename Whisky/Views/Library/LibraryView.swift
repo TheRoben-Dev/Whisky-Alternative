@@ -121,6 +121,7 @@ struct LibraryView: View {
                         item: row.item,
                         bottleName: row.bottleName,
                         lastPlayed: row.lastPlayed,
+                        playtime: row.playtime,
                         state: model.state(for: row.item),
                         launch: { model.launch(row, bottles: bottles) }
                     )

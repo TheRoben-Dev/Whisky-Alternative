@@ -31,6 +31,7 @@ struct ProgramView: View {
     @AppStorage("envArgsSectionExpanded") private var envArgsSectionExpanded: Bool = true
     @AppStorage("overridesSectionExpanded") private var overridesSectionExpanded: Bool = false
     @AppStorage("consoleRunsSectionExpanded") private var consoleRunsSectionExpanded: Bool = false
+    @AppStorage("playStatsSectionExpanded") private var playStatsSectionExpanded: Bool = true
     @State private var selectedRunId: UUID?
 
     private let sessionStore = TroubleshootingSessionStore()
@@ -42,6 +43,7 @@ struct ProgramView: View {
                     showTroubleshootingWizard = true
                 }
             }
+            PlayStatsSection(program: program, isExpanded: $playStatsSectionExpanded)
             Section("program.config", isExpanded: $configSectionExpanded) {
                 Picker("locale.title", selection: $program.settings.locale) {
                     ForEach(Locales.allCases, id: \.self) { locale in
@@ -151,6 +153,7 @@ struct ProgramView: View {
         .animation(.whiskyDefault, value: envArgsSectionExpanded)
         .animation(.whiskyDefault, value: overridesSectionExpanded)
         .animation(.whiskyDefault, value: consoleRunsSectionExpanded)
+        .animation(.whiskyDefault, value: playStatsSectionExpanded)
         .task {
             let icon = await IconCache.shared.iconOrFallback(for: program.url, peFile: program.peFile)
             self.cachedIconImage = Image(nsImage: icon)
