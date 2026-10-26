@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   history in `Program Settings`.
 - A Play Stats section on each program's page with totals and a 14-day
   activity chart, playtime on library cards, and a "Most played" library sort.
+- Game controller navigation. An Xbox-layout controller drives the whole app:
+  D-pad or left stick to move, A to select, B to go back, X to confirm, Y for
+  the sidebar, LB/RB to move between controls, LT/RT to page, the right stick
+  to scroll, View for search and Menu for settings. Button prompts appear while
+  the controller is in use, and it can be turned off in Settings.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked

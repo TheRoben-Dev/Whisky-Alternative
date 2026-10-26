@@ -55,8 +55,13 @@ struct LibraryCard: View {
     @State private var icon: Image?
     @State private var artwork: Image?
     @State private var palette: IconPalette = .neutral
+    /// Owned by the grid, which moves it between cards on arrow keys and the
+    /// controller's D-pad.
+    let focus: FocusState<String?>.Binding
+
     @State private var isHovering = false
-    @FocusState private var isFocused: Bool
+
+    private var isFocused: Bool { focus.wrappedValue == item.id }
 
     /// Both stops are opaque. A gradient that fades towards transparent
     /// composites against the window, which is near-white in light mode, and
@@ -80,12 +85,18 @@ struct LibraryCard: View {
         }
         .buttonStyle(.plain)
         .focusable()
-        .focused($isFocused)
+        .focused(focus, equals: item.id)
         // The system ring is a rectangle around the button's frame, so on a
         // rounded card it draws a second, squarer outline outside the one below
         // that follows the card's own shape.
         .focusEffectDisabled()
         .onKeyPress(.return) {
+            launch()
+            return .handled
+        }
+        // Space is how the controller's A button arrives, and how a focused
+        // control is pressed from the keyboard.
+        .onKeyPress(.space) {
             launch()
             return .handled
         }
