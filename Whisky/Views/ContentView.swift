@@ -143,6 +143,10 @@ struct ContentView: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            ControllerHintBar()
+                .allowsHitTesting(false)
+        }
         .sheet(isPresented: $showBottleCreation) {
             BottleCreationView(newlyCreatedBottleURL: $newlyCreatedBottleURL)
         }

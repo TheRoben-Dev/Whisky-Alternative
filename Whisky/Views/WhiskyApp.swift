@@ -98,6 +98,7 @@ struct WhiskyApp: App {
                 .environmentObject(BottleVM.shared)
                 .onAppear {
                     NSWindow.allowsAutomaticWindowTabbing = false
+                    ControllerNavigator.shared.start()
                     Task.detached {
                         await WhiskyApp.deleteOldLogs()
                     }

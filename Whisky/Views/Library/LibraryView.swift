@@ -41,6 +41,14 @@ struct LibraryView: View {
 
     @StateObject private var model = LibraryModel()
     @State private var search: String = ""
+    @FocusState private var focusedRow: String?
+    @State private var gridWidth: CGFloat = 0
+
+    /// Must match the grid's `GridItem` and padding below, so arrow movement
+    /// lands on the card that is visually above or below.
+    private static let cardMinWidth: CGFloat = 180
+    private static let cardSpacing: CGFloat = 14
+    private static let gridPadding: CGFloat = 18
 
     private var bottles: [Bottle] { bottleVM.bottles.filter(\.isAvailable) }
 
@@ -108,27 +116,67 @@ struct LibraryView: View {
     }
 
     private var grid: some View {
-        ScrollView {
-            LazyVGrid(
-                // 180 rather than 220 so two columns fit at the window's own
-                // minimum width, where the sidebar leaves about 330pt: one
-                // column of landscape cards is a list with wasted space.
-                columns: [GridItem(.adaptive(minimum: 180, maximum: 320), spacing: 14)],
-                spacing: 14
-            ) {
-                ForEach(visible) { row in
-                    LibraryCard(
-                        item: row.item,
-                        bottleName: row.bottleName,
-                        lastPlayed: row.lastPlayed,
-                        playtime: row.playtime,
-                        state: model.state(for: row.item),
-                        launch: { model.launch(row, bottles: bottles) }
-                    )
-                    .contextMenu { menu(for: row) }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVGrid(
+                    // 180 rather than 220 so two columns fit at the window's own
+                    // minimum width, where the sidebar leaves about 330pt: one
+                    // column of landscape cards is a list with wasted space.
+                    columns: [
+                        GridItem(.adaptive(minimum: Self.cardMinWidth, maximum: 320), spacing: Self.cardSpacing)
+                    ],
+                    spacing: Self.cardSpacing
+                ) {
+                    ForEach(visible) { row in
+                        LibraryCard(
+                            item: row.item,
+                            bottleName: row.bottleName,
+                            lastPlayed: row.lastPlayed,
+                            playtime: row.playtime,
+                            state: model.state(for: row.item),
+                            launch: { model.launch(row, bottles: bottles) },
+                            focus: $focusedRow
+                        )
+                        .contextMenu { menu(for: row) }
+                    }
                 }
+                .padding(Self.gridPadding)
             }
-            .padding(18)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { gridWidth = $0 }
+            .onMoveCommand(perform: moveFocus)
+            .onChange(of: focusedRow) {
+                guard let focusedRow else { return }
+                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(focusedRow) }
+            }
+        }
+    }
+
+    /// How many cards the adaptive grid fits in a row at the current width.
+    private var columnCount: Int {
+        let available = gridWidth - Self.gridPadding * 2
+        return max(1, Int((available + Self.cardSpacing) / (Self.cardMinWidth + Self.cardSpacing)))
+    }
+
+    /// Moves focus to the card in that direction. The grid needs this because
+    /// macOS only moves focus between controls with Tab: arrow keys, and the
+    /// controller's D-pad that sends them, would otherwise do nothing here.
+    private func moveFocus(_ direction: MoveCommandDirection) {
+        let ids = visible.map(\.id)
+        guard let first = ids.first else { return }
+        guard let current = focusedRow, let index = ids.firstIndex(of: current) else {
+            focusedRow = first
+            return
+        }
+
+        let target = switch direction {
+        case .left: index - 1
+        case .right: index + 1
+        case .up: index - columnCount
+        case .down: index + columnCount
+        @unknown default: index
+        }
+        if ids.indices.contains(target) {
+            focusedRow = ids[target]
         }
     }
 
