@@ -348,6 +348,16 @@ extension Wine {
             }
         }
 
+        // Metal performance HUD override, so one game can show frame times
+        // without turning the HUD on for the whole bottle (or off for it).
+        if let metalHud = overrides.metalHud {
+            if metalHud {
+                builder.set("MTL_HUD_ENABLED", "1", layer: .programUser)
+            } else {
+                builder.remove("MTL_HUD_ENABLED", layer: .programUser)
+            }
+        }
+
         // Shader cache override, on the variable DXVK actually reads.
         if let shaderCache = overrides.shaderCacheEnabled {
             if !shaderCache {
