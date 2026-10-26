@@ -44,6 +44,7 @@ struct ProgramView: View {
                 }
             }
             PlayStatsSection(program: program, isExpanded: $playStatsSectionExpanded)
+            PerformancePresetSection(program: program)
             Section("program.config", isExpanded: $configSectionExpanded) {
                 Picker("locale.title", selection: $program.settings.locale) {
                     ForEach(Locales.allCases, id: \.self) { locale in
