@@ -58,6 +58,11 @@ public struct ProgramOverrides: Codable, Equatable, Sendable {
     /// the rest of the bottle keeps it.
     public var metal4Enabled: Bool?
 
+    /// Whether Apple's Metal performance HUD is shown over this program. `nil`
+    /// inherits the bottle's setting, so the HUD can be turned on for the one
+    /// game being tuned instead of every program in the bottle.
+    public var metalHud: Bool?
+
     // MARK: - Performance
 
     /// Whether shader caching is enabled. `nil` inherits from bottle.
@@ -112,6 +117,7 @@ public struct ProgramOverrides: Codable, Equatable, Sendable {
             && dxvkHud == nil
             && enhancedSync == nil
             && metal4Enabled == nil
+            && metalHud == nil
             && shaderCacheEnabled == nil
             && controllerCompatibilityMode == nil
             && disableHIDAPI == nil
@@ -136,6 +142,7 @@ public struct ProgramOverrides: Codable, Equatable, Sendable {
         self.dxvkHud = try container.decodeIfPresent(DXVKHUD.self, forKey: .dxvkHud)
         self.enhancedSync = try container.decodeIfPresent(EnhancedSync.self, forKey: .enhancedSync)
         self.metal4Enabled = try container.decodeIfPresent(Bool.self, forKey: .metal4Enabled)
+        self.metalHud = try container.decodeIfPresent(Bool.self, forKey: .metalHud)
         self.shaderCacheEnabled = try container.decodeIfPresent(Bool.self, forKey: .shaderCacheEnabled)
         self.controllerCompatibilityMode = try container.decodeIfPresent(
             Bool.self, forKey: .controllerCompatibilityMode

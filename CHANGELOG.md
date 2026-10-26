@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playtime for Steam games. A game started from the library is timed until
   its last process exits, and its playtime, session count and last played
   show in the library like any other game's.
+- Per-game performance profiles (Balanced, Performance, Compatibility) on each
+  program's page, written as ordinary overrides, and a per-game Metal
+  performance HUD toggle.
 
 ### Fixed
 - Removing a stale native dxgi.dll from a bottle now puts Wine's own marked
