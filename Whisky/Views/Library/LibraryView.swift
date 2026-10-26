@@ -115,33 +115,64 @@ struct LibraryView: View {
         }
     }
 
+    /// The game the banner offers to continue: the most recently played one
+    /// that is not a launcher. Hidden while searching, where the banner would
+    /// push the matches down for something that may not be one of them.
+    private var heroRow: LibraryRow? {
+        guard search.isEmpty else { return nil }
+        return model.rows
+            .filter { !$0.item.isLauncher && $0.lastPlayed != nil }
+            .max { ($0.lastPlayed ?? .distantPast) < ($1.lastPlayed ?? .distantPast) }
+    }
+
     private var grid: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVGrid(
-                    // 180 rather than 220 so two columns fit at the window's own
-                    // minimum width, where the sidebar leaves about 330pt: one
-                    // column of landscape cards is a list with wasted space.
-                    columns: [
-                        GridItem(.adaptive(minimum: Self.cardMinWidth, maximum: 320), spacing: Self.cardSpacing)
-                    ],
-                    spacing: Self.cardSpacing
-                ) {
-                    ForEach(visible) { row in
-                        LibraryCard(
-                            item: row.item,
-                            bottleName: row.bottleName,
-                            lastPlayed: row.lastPlayed,
-                            playtime: row.playtime,
-                            state: model.state(for: row.item),
-                            launch: { model.launch(row, bottles: bottles) },
+                VStack(alignment: .leading, spacing: 18) {
+                    if let hero = heroRow {
+                        LibraryHero(
+                            row: hero,
+                            state: model.state(for: hero.item),
+                            launch: { model.launch(hero, bottles: bottles) },
                             focus: $focusedRow
                         )
-                        .contextMenu { menu(for: row) }
+                        .id(LibraryHero.focusID)
+                        .contextMenu { menu(for: hero) }
+
+                        Text("library.section.all")
+                            .font(.title3.weight(.bold))
+                            .padding(.top, 4)
+                    }
+
+                    LazyVGrid(
+                        // 180 rather than 220 so two columns fit at the window's own
+                        // minimum width, where the sidebar leaves about 330pt: one
+                        // column of landscape cards is a list with wasted space.
+                        columns: [
+                            GridItem(.adaptive(minimum: Self.cardMinWidth, maximum: 320), spacing: Self.cardSpacing)
+                        ],
+                        spacing: Self.cardSpacing
+                    ) {
+                        ForEach(visible) { row in
+                            LibraryCard(
+                                item: row.item,
+                                bottleName: row.bottleName,
+                                lastPlayed: row.lastPlayed,
+                                playtime: row.playtime,
+                                state: model.state(for: row.item),
+                                launch: { model.launch(row, bottles: bottles) },
+                                focus: $focusedRow
+                            )
+                            .contextMenu { menu(for: row) }
+                        }
                     }
                 }
                 .padding(Self.gridPadding)
             }
+            .background(LibraryBackdrop())
+            // The library is the console-style part of the app, so it is dark
+            // whatever the system appearance; settings and bottle pages are not.
+            .environment(\.colorScheme, .dark)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { gridWidth = $0 }
             .onMoveCommand(perform: moveFocus)
             .onChange(of: focusedRow) {
@@ -160,11 +191,22 @@ struct LibraryView: View {
     /// Moves focus to the card in that direction. The grid needs this because
     /// macOS only moves focus between controls with Tab: arrow keys, and the
     /// controller's D-pad that sends them, would otherwise do nothing here.
+    ///
+    /// The banner sits above the first row: up from there reaches it, and down
+    /// from it lands on the first card.
     private func moveFocus(_ direction: MoveCommandDirection) {
         let ids = visible.map(\.id)
-        guard let first = ids.first else { return }
+        let hasHero = heroRow != nil
+
+        if focusedRow == LibraryHero.focusID {
+            if direction == .down, let first = ids.first {
+                focusedRow = first
+            }
+            return
+        }
+
         guard let current = focusedRow, let index = ids.firstIndex(of: current) else {
-            focusedRow = first
+            focusedRow = hasHero ? LibraryHero.focusID : ids.first
             return
         }
 
@@ -177,6 +219,8 @@ struct LibraryView: View {
         }
         if ids.indices.contains(target) {
             focusedRow = ids[target]
+        } else if direction == .up, hasHero {
+            focusedRow = LibraryHero.focusID
         }
     }
 
@@ -220,5 +264,22 @@ struct LibraryView: View {
                     .buttonStyle(.borderedProminent)
             }
         }
+    }
+}
+
+/// The library's dark backdrop: near black with a faint accent glow from the
+/// top, so cards and their art carry the colour rather than the window.
+struct LibraryBackdrop: View {
+    var body: some View {
+        ZStack {
+            Color(red: 0.05, green: 0.055, blue: 0.07)
+            RadialGradient(
+                colors: [Color.accentColor.opacity(0.18), .clear],
+                center: .top,
+                startRadius: 0,
+                endRadius: 520
+            )
+        }
+        .ignoresSafeArea()
     }
 }

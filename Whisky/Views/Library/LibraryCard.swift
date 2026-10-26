@@ -187,8 +187,15 @@ struct LibraryCard: View {
                     .strokeBorder(Color.accentColor, lineWidth: 3)
             }
         }
-        .shadow(color: .black.opacity(isActive ? 0.28 : 0.16), radius: isActive ? 10 : 5, y: 3)
-        .scaleEffect(isActive ? 1.015 : 1)
+        // Focus gets the accent glow and a bigger lift than hover, because on a
+        // controller it is the only cue for where you are on a 10-foot screen.
+        .shadow(
+            color: isFocused ? Color.accentColor.opacity(0.5) : .black.opacity(isActive ? 0.28 : 0.16),
+            radius: isFocused ? 16 : (isActive ? 10 : 5),
+            y: isFocused ? 0 : 3
+        )
+        .scaleEffect(isFocused ? 1.04 : (isActive ? 1.015 : 1))
+        .animation(.easeOut(duration: 0.15), value: isFocused)
     }
 
     /// The top-right corner: what it is doing, or the offer to start it.
